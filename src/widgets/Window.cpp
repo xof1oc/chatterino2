@@ -53,6 +53,8 @@
 #include <QStandardItemModel>
 #include <QVBoxLayout>
 
+#include <algorithm>
+
 namespace chatterino {
 
 Window::Window(WindowType type, QWidget *parent)
@@ -388,6 +390,29 @@ void Window::addShortcuts()
         {"openAccountSelector",  // Open account selector
          [](const std::vector<QString> &) -> QString {
              getApp()->getWindows()->showAccountSelectPopup({0, 0});
+             return "";
+         }},
+        {"switchToNextAccount",  // Switch to next account
+         [](const std::vector<QString> &) -> QString {
+             auto &twitch = getApp()->getAccounts()->twitch;
+             auto usernames = twitch.getUsernames();
+             if (usernames.size() < 2)
+             {
+                 return "";
+             }
+
+             const auto current = twitch.currentUsername.getValue();
+             auto it = std::ranges::find_if(
+                 usernames, [&current](const QString &username) {
+                     return username.compare(current, Qt::CaseInsensitive) == 0;
+                 });
+             // An unknown account (e.g. anonymous) starts the cycle at the top
+             auto index = it == usernames.end()
+                              ? size_t{0}
+                              : static_cast<size_t>(it - usernames.begin());
+
+             twitch.currentUsername = usernames[(index + 1) % usernames.size()];
+             getSettings()->requestSave();
              return "";
          }},
         {"newSplit",  // Create a new split

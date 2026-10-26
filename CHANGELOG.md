@@ -2,6 +2,8 @@
 
 ## Unversioned
 
+- Minor: Added a "Switch to next account" hotkey action, bound to Ctrl+Down by default.
+
 ## 2.5.5
 
 - Minor: Update emoji data to Unicode 17.0. (#6471)
