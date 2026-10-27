@@ -92,6 +92,7 @@ void sendHelixMessage(const std::shared_ptr<TwitchChannel> &channel,
             {
                 chan->addSystemMessage("Your message was not sent.");
             }
+            chan->notifySendFailed();
         },
         [weak = std::weak_ptr(channel)](auto error, auto message) {
             auto chan = weak.lock();

@@ -135,8 +135,8 @@ TwitchChannel::TwitchChannel(const QString &name)
     qCDebug(chatterinoTwitch) << "[TwitchChannel" << name << "] Opened";
 
     this->localSendConfirmationTimer_.setSingleShot(true);
-    QObject::connect(&this->localSendConfirmationTimer_, &QTimer::timeout, this,
-                     [this] {
+    QObject::connect(&this->localSendConfirmationTimer_, &QTimer::timeout,
+                     &this->lifetimeGuard_, [this] {
                          this->handleLocalSendNotConfirmed();
                      });
 
