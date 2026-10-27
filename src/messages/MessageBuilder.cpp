@@ -12,6 +12,7 @@
 #include "controllers/emotes/EmoteController.hpp"
 #include "controllers/highlights/HighlightController.hpp"
 #include "controllers/highlights/HighlightResult.hpp"
+#include "controllers/highlights/Sounds.hpp"
 #include "controllers/ignores/IgnoreController.hpp"
 #include "controllers/ignores/IgnorePhrase.hpp"
 #include "controllers/userdata/UserDataController.hpp"
@@ -1270,6 +1271,21 @@ void MessageBuilder::triggerHighlights(const Channel *channel,
     }
     actuallyTriggerHighlights(channel->getName(), alert.sound,
                               alert.windowAlert);
+}
+
+void MessageBuilder::triggerSound(const Channel *channel,
+                                  const QString &soundId)
+{
+    auto sound = highlights::resolveDefaultSound(soundId);
+    if (!sound)
+    {
+        qCWarning(chatterinoSound)
+            << "Unknown default sound id" << soundId;
+        return;
+    }
+
+    actuallyTriggerHighlights(channel->getName(), QUrl(sound->resourcePath),
+                              false);
 }
 
 void MessageBuilder::appendChannelPointRewardMessage(

@@ -105,6 +105,15 @@ const Link ACCOUNTS_LINK(Link::OpenAccountsPage, QString());
 // Maximum number of chatters to fetch when refreshing chatters
 constexpr auto MAX_CHATTERS_TO_FETCH = 5000;
 
+/// How long a message we sent may stay unconfirmed by the server echo before
+/// we consider the send lost. Generous, since echoes are delayed in busy rooms.
+constexpr auto LOCAL_SEND_ECHO_TIMEOUT = 20s;
+
+/// Built-in sounds (see controllers/highlights/Sounds.cpp) used to report the
+/// outcome of sending a message.
+const QString SEND_CONFIRMED_SOUND_ID = u"001-ping2"_s;
+const QString SEND_FAILURE_SOUND_ID = u"004-yfjesse-notification"_s;
+
 // From Twitch docs - expected size for a badge (1x)
 constexpr QSize BASE_BADGE_SIZE(18, 18);
 
@@ -124,6 +133,12 @@ TwitchChannel::TwitchChannel(const QString &name)
     , nextSharedChatSessionProbe_(QDateTime::currentDateTime())
 {
     qCDebug(chatterinoTwitch) << "[TwitchChannel" << name << "] Opened";
+
+    this->localSendConfirmationTimer_.setSingleShot(true);
+    QObject::connect(&this->localSendConfirmationTimer_, &QTimer::timeout, this,
+                     [this] {
+                         this->handleLocalSendNotConfirmed();
+                     });
 
     this->signalHolder_.managedConnect(
         getApp()->getAccounts()->twitch.currentUserAboutToChange,
@@ -886,6 +901,7 @@ void TwitchChannel::sendMessage(const QString &message)
     {
         qCDebug(chatterinoTwitch) << "sent";
         this->lastSentMessage_ = parsedMessage;
+        this->noteLocalSend();
     }
 }
 
@@ -926,6 +942,7 @@ void TwitchChannel::sendReply(const QString &message, const QString &replyId)
     {
         qCDebug(chatterinoTwitch) << "sent";
         this->lastSentMessage_ = parsedMessage;
+        this->noteLocalSend();
     }
 }
 
@@ -2555,6 +2572,64 @@ void TwitchChannel::setSendWait(int seconds)
     {
         this->sendWaitTimer_.start(1s);
         this->syncSendWaitTimer();
+    }
+}
+
+void TwitchChannel::noteLocalSend()
+{
+    if (this->localSendEchoTimer_.isValid())
+    {
+        this->localSendEchoTimer_.restart();
+    }
+    else
+    {
+        this->localSendEchoTimer_.start();
+    }
+    this->localSendConfirmationTimer_.start(LOCAL_SEND_ECHO_TIMEOUT);
+}
+
+bool TwitchChannel::confirmLocalSend(const QString &username)
+{
+    if (!this->localSendEchoTimer_.isValid())
+    {
+        return false;
+    }
+
+    auto currentUser = getApp()->getAccounts()->twitch.getCurrent();
+    if (username.compare(currentUser->getUserName(), Qt::CaseInsensitive) != 0)
+    {
+        return false;
+    }
+
+    this->localSendConfirmationTimer_.stop();
+    this->localSendEchoTimer_.invalidate();
+    return true;
+}
+
+void TwitchChannel::notifySendConfirmed()
+{
+    if (getSettings()->soundOnMessageDelivered)
+    {
+        MessageBuilder::triggerSound(this, SEND_CONFIRMED_SOUND_ID);
+    }
+}
+
+void TwitchChannel::notifySendFailed()
+{
+    this->localSendConfirmationTimer_.stop();
+    this->localSendEchoTimer_.invalidate();
+
+    if (getSettings()->soundOnMessageFailed)
+    {
+        MessageBuilder::triggerSound(this, SEND_FAILURE_SOUND_ID);
+    }
+}
+
+void TwitchChannel::handleLocalSendNotConfirmed()
+{
+    if (this->localSendEchoTimer_.isValid())
+    {
+        this->notifySendFailed();
     }
 }
 

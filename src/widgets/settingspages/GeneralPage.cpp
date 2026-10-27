@@ -1135,6 +1135,18 @@ void GeneralPage::initLayout(GeneralPageView &layout)
             "sleeping.")
         ->addTo(layout);
 
+    SettingWidget::checkbox("Play a sound when my message reaches chat",
+                            s.soundOnMessageDelivered)
+        ->setTooltip("Triggers when Twitch echoes a message you sent back to "
+                     "the room, which means everyone can see it.")
+        ->addTo(layout);
+    SettingWidget::checkbox("Play a sound when a message fails to send",
+                            s.soundOnMessageFailed)
+        ->setTooltip(
+            "Triggers on slow mode, timeouts, chat rate limits, API errors, "
+            "and messages that never come back from the server.")
+        ->addTo(layout);
+
     layout.addTitle("Advanced");
 
     layout.addSubtitle("Chat title");

@@ -403,6 +403,26 @@ public:
      */
     void setSendWait(int seconds);
 
+    /**
+     * Remember that a message was handed to Twitch for sending. If the server
+     * echoes a message from us back within a short window, the message made it
+     * into chat; if it never does, the send was lost.
+     */
+    void noteLocalSend();
+
+    /// If `username` turns out to be us and a message we sent is still waiting
+    /// to be echoed back, that send succeeded - consume the pending state and
+    /// return true. Safe (and cheap) to call for every incoming message.
+    bool confirmLocalSend(const QString &username);
+
+    /// Report that the message is visible in chat (plays the confirmation
+    /// sound if enabled).
+    void notifySendConfirmed();
+
+    /// Report that a send failed. Drops the pending state so the same send
+    /// cannot also raise a timeout alert.
+    void notifySendFailed();
+
     bool isLoadingRecentMessages() const;
 
     const std::vector<HelixMinimalUser> &getSharedChatSessionParticipants()
@@ -432,6 +452,9 @@ public:
     pajlada::Signals::NoArgSignal pinnedMessageChanged;
 
 private:
+    /// Called when a pending `noteLocalSend` was never echoed back.
+    void handleLocalSendNotConfirmed();
+
     struct NameOptions {
         // displayName is the non-CJK-display name for this user
         // This will always be the same as their `name_`, but potentially with different casing
@@ -588,6 +611,8 @@ private:
 
     // --
     QString lastSentMessage_;
+    QElapsedTimer localSendEchoTimer_;
+    QTimer localSendConfirmationTimer_;
     QObject lifetimeGuard_;
     QTimer chattersListTimer_;
     QTimer threadClearTimer_;

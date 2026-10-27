@@ -742,6 +742,16 @@ public:
         false,
     };
 
+    BoolSetting soundOnMessageDelivered = {
+        "/sound/onMessageDelivered",
+        true,
+    };
+
+    BoolSetting soundOnMessageFailed = {
+        "/sound/onMessageFailed",
+        true,
+    };
+
     // Advanced
     QStringSetting additionalExtensionIDs{"/misc/additionalExtensionIDs", ""};
 

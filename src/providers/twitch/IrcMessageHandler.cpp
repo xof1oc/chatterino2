@@ -1030,6 +1030,16 @@ void IrcMessageHandler::handleNoticeMessage(Communi::IrcNoticeMessage *message)
         // @msg-id=msg_timedout :tmi.twitch.tv NOTICE #twitch :You are timed out for 3600 more seconds.
         handleSendWait(message->content().split(u' ').value(5));
     }
+
+    if (tags == "msg_slowmode" || tags == "msg_timedout")
+    {
+        // Either way, the message we tried to send was rejected.
+        auto *tc = dynamic_cast<TwitchChannel *>(channel.get());
+        if (tc != nullptr)
+        {
+            tc->notifySendFailed();
+        }
+    }
 }
 
 void IrcMessageHandler::handleJoinMessage(Communi::IrcMessage *message)
@@ -1232,6 +1242,13 @@ void IrcMessageHandler::addMessage(Communi::IrcMessage *message,
 
         sink.addMessage(msg, MessageContext::Original);
         chan->addRecentChatter(msg->displayName);
+
+        // Twitch echoes a message once it is actually in the room, so receiving
+        // our own echo back means everyone else can see it too.
+        if (chan->confirmLocalSend(msg->loginName))
+        {
+            chan->notifySendConfirmed();
+        }
     }
 }
 

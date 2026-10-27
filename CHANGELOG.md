@@ -3,6 +3,7 @@
 ## Unversioned
 
 - Minor: Added a "Switch to next account" hotkey action, bound to Ctrl+Down by default.
+- Minor: Added sounds that tell you whether a message you sent actually reached chat.
 
 ## 2.5.5
 

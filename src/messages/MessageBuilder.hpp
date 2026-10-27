@@ -164,6 +164,10 @@ public:
     static void triggerHighlights(const Channel *channel,
                                   const HighlightAlert &alert);
 
+    /// Play one of the built-in sounds (see highlights::defaultSounds) for the
+    /// given channel, honouring streamer mode and channel mute settings.
+    static void triggerSound(const Channel *channel, const QString &soundId);
+
     void appendChannelPointRewardMessage(const ChannelPointReward &reward,
                                          bool isMod, bool isBroadcaster);
 

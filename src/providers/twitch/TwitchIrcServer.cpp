@@ -130,6 +130,7 @@ void sendHelixMessage(const std::shared_ptr<TwitchChannel> &channel,
                 }
             }();
             chan->addSystemMessage(errorMessage);
+            chan->notifySendFailed();
         });
 }
 
@@ -741,6 +742,7 @@ bool TwitchIrcServer::prepareToSend(
         if (this->lastErrorTimeSpeed_ + 30s < now)
         {
             channel->addSystemMessage("You are sending messages too quickly.");
+            channel->notifySendFailed();
 
             this->lastErrorTimeSpeed_ = now;
         }
@@ -759,6 +761,7 @@ bool TwitchIrcServer::prepareToSend(
         if (this->lastErrorTimeAmount_ + 30s < now)
         {
             channel->addSystemMessage("You are sending too many messages.");
+            channel->notifySendFailed();
 
             this->lastErrorTimeAmount_ = now;
         }
