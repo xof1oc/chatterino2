@@ -1284,8 +1284,21 @@ void MessageBuilder::triggerSound(const Channel *channel,
         return;
     }
 
-    actuallyTriggerHighlights(channel->getName(), QUrl(sound->resourcePath),
-                              false);
+    if (getApp()->getStreamerMode()->isEnabled() &&
+        getSettings()->streamerModeMuteMentions)
+    {
+        return;
+    }
+
+    if (getSettings()->isMutedChannel(channel->getName()))
+    {
+        return;
+    }
+
+    // Not reusing actuallyTriggerHighlights on purpose: it stays silent while
+    // Chatterino has focus, and these sounds are meant to be heard exactly when
+    // you are the one typing.
+    getApp()->getSound()->play(QUrl(sound->resourcePath));
 }
 
 void MessageBuilder::appendChannelPointRewardMessage(
